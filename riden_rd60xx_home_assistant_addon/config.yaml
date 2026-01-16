@@ -26,7 +26,7 @@ options:
   mqtt_prefix: "riden"
   mqtt_discovery_enabled: true
   mqtt_discovery_prefix: "homeassistant"
-  default_update_period: 10
+  default_update_period: 5
 schema:
   mqtt_host: str
   mqtt_port: int
