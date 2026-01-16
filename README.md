@@ -1,0 +1,1 @@
+# Riden-RD60xx-MQTT-Bridge-Home-Assistant-Addon
