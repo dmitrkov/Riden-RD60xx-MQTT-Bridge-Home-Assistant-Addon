@@ -1,7 +1,7 @@
 # Riden RD60xx MQTT Bridge Home Assistant Add-on
 
 Bridge for Riden RD60xx power supplies that exposes status and controls over MQTT.
-It works with the **standard Riden WiFi module** out of the box � **no flashing, no hardware mods, no firmware changes required**.
+It works with the **standard Riden WiFi module** out of the box. **No flashing, no hardware mods, no firmware changes required**.
 
 ---
 
@@ -25,14 +25,7 @@ It works with the **standard Riden WiFi module** out of the box � **no flashin
 
 ### 1) Add this repository to Home Assistant
 
-Add the repository URL in Home Assistant:
-
-- **Settings ? Add-ons ? Add-on Store ? ? ? Repositories**
-- Paste this repository URL and add it
-
-You can also use the **Add to Home Assistant** button:
-
-[![Add to Home Assistant](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?repository=https://github.com/DetFisch/Riden-RD60xx-MQTT-Bridge-Home-Assistant-Addon)
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FDetFisch%2FRiden-RD60xx-MQTT-Bridge-Home-Assistant-Addon)
 
 ### 2) Install the add-on
 
@@ -49,7 +42,7 @@ If MQTT Discovery is enabled, entities will appear automatically in Home Assista
 
 ---
 
-## Configuration
+## Configuration (optional)
 
 Minimal (Mosquitto defaults):
 
@@ -66,7 +59,7 @@ mqtt_discovery_enabled: true
 
 ## WiFi Provisioning Tool (optional)
 
-If your PSU WiFi module is not yet configured to connect to your Home Asisstant's IP, use the provisioning tool:
+If your PSU WiFi module is not yet configured to connect to your Home Asisstant IP, use the provisioning tool:
 
 ### Tool location
 
@@ -93,7 +86,7 @@ You will be asked for:
 
 After provisioning, the PSU connects to your WiFi Router and then to the **server IP** you entered (Home Assistant).
 
-### Example
+### Example with CLI commands (alternative)
 
 ```bash
 python riden_wifi_provision.py --server-ip 192.168.1.50 --ssid "MyWiFi" --password "secret" --bssid "b8:c1:ac:a6:35:93"
