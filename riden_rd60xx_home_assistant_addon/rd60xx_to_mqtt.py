@@ -47,7 +47,7 @@ class RD60xxToMQTT:
                  default_update_period:float=0,
                  mqtt_discovery_enabled:bool=False,
                  mqtt_discovery_prefix:str=None,
-                 psu_address:int=1) -> None:
+                 psu_addresses:list=None) -> None:
         """Constructor"""
 
         # Store args
@@ -68,7 +68,7 @@ class RD60xxToMQTT:
         self._default_update_period = default_update_period
         self._mqtt_discovery_enabled = mqtt_discovery_enabled
         self._mqtt_discovery_prefix = mqtt_discovery_prefix
-        self._psu_address = psu_address
+        self._psu_addresses = psu_addresses if psu_addresses else [1]
 
         # Retrieve logger
         self._logger = logging.getLogger("RD60xxToMQTT")
@@ -105,7 +105,7 @@ class RD60xxToMQTT:
         psu_server = await loop.create_server(
             lambda: RD60xx(self.psu_connected,
                            self.psu_disconnected,
-                           psu_address=self._psu_address),
+                           psu_address=self._psu_addresses[0]),
             '0.0.0.0', 8080
         )
 
@@ -401,11 +401,21 @@ class RD60xxToMQTT:
                         last_connection = None
 
                 if identity is None:
-                    # Query PSU to retrieve model and serial number (forming identity)
-                    try:
-                        query_result = await psu.get_state()
-                    except Exception:
-                        # Query failed, close connection
+                    # Try each configured PSU address to find which one responds
+                    query_result = None
+                    for addr in self._psu_addresses:
+                        psu.PSU_ADDR = addr
+                        try:
+                            query_result = await psu.get_state()
+                            self._logger.debug("PSU responded on address %d", addr)
+                            break
+                        except Exception:
+                            self._logger.debug("No response on address %d, trying next", addr)
+                            continue
+
+                    if query_result is None:
+                        # No address responded, close connection
+                        self._logger.warning("PSU at %s:%d did not respond on any configured address %s", host, port, self._psu_addresses)
                         psu.close()
                         continue
 
