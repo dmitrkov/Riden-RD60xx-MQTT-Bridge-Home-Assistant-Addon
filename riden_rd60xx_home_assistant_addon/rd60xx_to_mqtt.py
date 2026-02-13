@@ -46,7 +46,8 @@ class RD60xxToMQTT:
                  set_clock_on_connection:bool=True,
                  default_update_period:float=0,
                  mqtt_discovery_enabled:bool=False,
-                 mqtt_discovery_prefix:str=None) -> None:
+                 mqtt_discovery_prefix:str=None,
+                 psu_address:int=1) -> None:
         """Constructor"""
 
         # Store args
@@ -67,6 +68,7 @@ class RD60xxToMQTT:
         self._default_update_period = default_update_period
         self._mqtt_discovery_enabled = mqtt_discovery_enabled
         self._mqtt_discovery_prefix = mqtt_discovery_prefix
+        self._psu_address = psu_address
 
         # Retrieve logger
         self._logger = logging.getLogger("RD60xxToMQTT")
@@ -102,7 +104,8 @@ class RD60xxToMQTT:
         # Create TCP server, waiting for PSU clients to connect
         psu_server = await loop.create_server(
             lambda: RD60xx(self.psu_connected,
-                           self.psu_disconnected),
+                           self.psu_disconnected,
+                           psu_address=self._psu_address),
             '0.0.0.0', 8080
         )
 

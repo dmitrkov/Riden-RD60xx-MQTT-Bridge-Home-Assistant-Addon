@@ -89,6 +89,7 @@ def main():
     default_update_period = float(options.get("default_update_period", 0) or 0)
     mqtt_discovery_enabled = bool(options.get("mqtt_discovery_enabled", False))
     mqtt_discovery_prefix = options.get("mqtt_discovery_prefix", "homeassistant")
+    psu_address = int(options.get("psu_address", 1) or 1)
 
     log_level = str(options.get("log_level", "info")).upper()
     log_format = "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
@@ -132,6 +133,7 @@ def main():
         default_update_period=default_update_period,
         mqtt_discovery_enabled=mqtt_discovery_enabled,
         mqtt_discovery_prefix=mqtt_discovery_prefix,
+        psu_address=psu_address,
     )
 
     asyncio.run(mqtt_bridge.run())
