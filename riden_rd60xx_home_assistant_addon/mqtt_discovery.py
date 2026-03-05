@@ -100,12 +100,12 @@ async def publish_discovery_config(
         {"name": "Firmware Version", "id": "firmware_version", "icon": "mdi:update", "value_template": "{{ value_json.firmware_version }}"},
 
         # Output measurements
-        {"name": "Output Voltage", "id": "output_voltage_disp", "unit": "V", "device_class": "voltage", "state_class": "measurement", "icon": "mdi:lightning-bolt", "value_template": "{{ value_json.output_voltage_disp }}", "precision": 3},
-        {"name": "Output Current", "id": "output_current_disp", "unit": "A", "device_class": "current", "state_class": "measurement", "icon": "mdi:current-dc", "value_template": "{{ value_json.output_current_disp }}", "precision": 3},
-        {"name": "Output Power", "id": "output_power_disp", "unit": "W", "device_class": "power", "state_class": "measurement", "icon": "mdi:flash", "value_template": "{{ value_json.output_power_disp }}", "precision": 2},
+        {"name": "Output Voltage", "id": "output_voltage_disp", "unit": "V", "device_class": "voltage", "state_class": "measurement", "icon": "mdi:lightning-bolt", "value_template": "{{ value_json.output_voltage_disp }}", "precision": 4},
+        {"name": "Output Current", "id": "output_current_disp", "unit": "A", "device_class": "current", "state_class": "measurement", "icon": "mdi:current-dc", "value_template": "{{ value_json.output_current_disp }}", "precision": 4},
+        {"name": "Output Power", "id": "output_power_disp", "unit": "W", "device_class": "power", "state_class": "measurement", "icon": "mdi:flash", "value_template": "{{ value_json.output_power_disp }}", "precision": 4},
 
         # Input and status
-        {"name": "Input Voltage", "id": "input_voltage", "unit": "V", "device_class": "voltage", "state_class": "measurement", "icon": "mdi:power-plug", "value_template": "{{ value_json.input_voltage }}", "precision": 2},
+        {"name": "Input Voltage", "id": "input_voltage", "unit": "V", "device_class": "voltage", "state_class": "measurement", "icon": "mdi:power-plug", "value_template": "{{ value_json.input_voltage }}", "precision": 3},
         {"name": "Output Mode", "id": "output_mode", "icon": "mdi:sine-wave", "value_template": "{{ value_json.output_mode | upper }}"},
         {"name": "Protection Status", "id": "protection_status", "icon": "mdi:shield-check", "value_template": "{{ value_json.protection_status }}"},
         {"name": "Current Range", "id": "current_range", "unit": "A", "state_class": "measurement", "icon": "mdi:gauge", "value_template": "{% if value_json.current_range is defined %}{{ 6 if value_json.current_range == 0 else 12 }}{% else %}0{% endif %}"},
@@ -185,7 +185,7 @@ async def publish_discovery_config(
     # Number controls (using dynamic limits based on PSU model)
     numbers = [
         {"name": "Set Voltage", "id": "set_voltage", "min": 0, "max": max_voltage, "step": 0.01, "unit": "V", "device_class": "voltage", "icon": "mdi:lightning-bolt", "value_template": "{{ value_json.output_voltage_set }}", "command_template": '{"output_voltage_set": {{ value }} }'},
-        {"name": "Set Current", "id": "set_current", "min": 0, "max": max_current, "step": 0.01, "unit": "A", "device_class": "current", "icon": "mdi:current-dc", "value_template": "{{ value_json.output_current_set }}", "command_template": '{"output_current_set": {{ value }} }'},
+        {"name": "Set Current", "id": "set_current", "min": 0, "max": max_current, "step": 0.001, "unit": "A", "device_class": "current", "icon": "mdi:current-dc", "value_template": "{{ value_json.output_current_set }}", "command_template": '{"output_current_set": {{ value }} }'},
         {"name": "OVP", "id": "set_ovp", "min": 0, "max": max_ovp, "step": 0.01, "unit": "V", "device_class": "voltage", "icon": "mdi:shield-alert", "value_template": "{{ value_json.ovp }}", "command_template": '{"ovp": {{ value }} }'},
         {"name": "OCP", "id": "set_ocp", "min": 0, "max": max_current, "step": 0.01, "unit": "A", "device_class": "current", "icon": "mdi:shield-alert", "value_template": "{{ value_json.ocp }}", "command_template": '{"ocp": {{ value }} }'},
         {"name": "Update Period", "id": "set_period", "min": 0, "max": 60, "step": 0.1, "unit": "s", "icon": "mdi:timer", "value_template": "{{ value_json.period }}", "command_template": '{"period": {{ value }} }'},
