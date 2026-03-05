@@ -299,16 +299,22 @@ class RD60xx(AsyncModbusReverseTcpClient):
     DEFAULT_VOLTAGE_SCALE = 100.0
     MODEL_VOLTAGE_SCALINGS = {
         60125 : 1000.0,
+        60185 : 1000.0,
+        60065 : 1000.0,
     }
     DEFAULT_CURRENT_SCALE = (100.0, False) # (scale, uses current range)
     MODEL_CURRENT_SCALINGS = {
         # model : (scale, uses current range)
         6006 : (1000.0, False),
         60125 : (1000.0, True),
+        60185 : (1000.0, True),
+        60065 : (1000.0, True),
     }
     DEFAULT_POWER_SCALE = 100.0
     MODEL_POWER_SCALINGS = {
         60125 : 1000.0,
+        60185 : 1000.0,
+        60065 : 1000.0,
     }
     BATT_SCALE = 1000.0
 
