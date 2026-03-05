@@ -307,7 +307,7 @@ class RD60xx(AsyncModbusReverseTcpClient):
         # model : (scale, uses current range)
         6006 : (1000.0, False),
         60125 : (1000.0, True),
-        60185 : (1000.0, True),
+        60185 : (1000.0, False),
         60065 : (1000.0, True),
     }
     DEFAULT_POWER_SCALE = 100.0
