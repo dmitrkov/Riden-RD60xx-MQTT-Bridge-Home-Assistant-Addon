@@ -259,6 +259,10 @@ async def publish_discovery_config(
         topic = f"{mqtt_discovery_prefix}/button/riden_{identity}/{button['id']}/config"
         configs.append((topic, config))
 
+    # Home Assistant 2026.x ignores object_id, default_entity_id sets the entity_id
+    for topic, config in configs:
+        config["default_entity_id"] = f"{topic.split('/')[1]}.{config['object_id']}"
+
     # Publish all configurations
     try:
         for topic, config in configs:

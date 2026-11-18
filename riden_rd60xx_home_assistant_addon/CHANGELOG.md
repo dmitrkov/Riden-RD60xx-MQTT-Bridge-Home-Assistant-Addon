@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.11 - 2026-11-18 (fork)
+
+- Discovery sets `default_entity_id` (`<domain>.riden_<identity>_<id>`):
+  Home Assistant 2026.x ignores `object_id` and adds the area to new entity ids.
+
 ## 1.0.10 - 2026-11-18 (fork)
 
 - Periodic polling locks the PSU keys. A PSU is not polled after it connects

@@ -28,6 +28,17 @@ class MonitoringDiscoveryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(json.loads(switch["payload_off"]), {"period": 0})
         self.assertEqual(switch["value_template"], "{{ value_json.period > 0 }}")
 
+    async def test_every_entity_has_default_entity_id(self):
+        # Home Assistant 2026.x ignores object_id; default_entity_id sets the entity_id.
+        client = Mock(publish=AsyncMock())
+        await publish_discovery_config(client, "riden", "homeassistant", IDENTITY, 60181,
+                                       "Riden RD6018", "1.39", 5)
+
+        for call in client.publish.call_args_list:
+            component = call.args[0].split("/")[1]
+            config = json.loads(call.kwargs["payload"])
+            self.assertEqual(config["default_entity_id"], f"{component}.{config['object_id']}")
+
 
 class InitialPeriodTests(unittest.TestCase):
     def test_new_psu_is_not_polled_by_default(self):
