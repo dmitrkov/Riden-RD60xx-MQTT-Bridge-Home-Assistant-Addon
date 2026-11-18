@@ -87,6 +87,7 @@ def main():
     mqtt_reconnect_delay_secs = float(options.get("mqtt_reconnect_delay_secs", 5) or 5)
     set_clock_on_connection = bool(options.get("set_clock_on_connection", True))
     default_update_period = float(options.get("default_update_period", 0) or 0)
+    monitor_on_connect = bool(options.get("monitor_on_connect", False))
     mqtt_discovery_enabled = bool(options.get("mqtt_discovery_enabled", False))
     mqtt_discovery_prefix = options.get("mqtt_discovery_prefix", "homeassistant")
     psu_addresses_raw = options.get("psu_addresses")
@@ -135,6 +136,7 @@ def main():
         mqtt_reconnect_delay_secs=mqtt_reconnect_delay_secs,
         set_clock_on_connection=set_clock_on_connection,
         default_update_period=default_update_period,
+        monitor_on_connect=monitor_on_connect,
         mqtt_discovery_enabled=mqtt_discovery_enabled,
         mqtt_discovery_prefix=mqtt_discovery_prefix,
         psu_addresses=psu_addresses,

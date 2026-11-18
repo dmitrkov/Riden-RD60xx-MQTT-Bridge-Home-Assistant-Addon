@@ -45,6 +45,7 @@ class RD60xxToMQTT:
                  mqtt_reconnect_delay_secs:int=5,
                  set_clock_on_connection:bool=True,
                  default_update_period:float=0,
+                 monitor_on_connect:bool=False,
                  mqtt_discovery_enabled:bool=False,
                  mqtt_discovery_prefix:str=None,
                  psu_addresses:list=None) -> None:
@@ -66,6 +67,7 @@ class RD60xxToMQTT:
         self._mqtt_reconnect_delay_secs = mqtt_reconnect_delay_secs
         self._set_clock_on_connection = set_clock_on_connection
         self._default_update_period = default_update_period
+        self._monitor_on_connect = monitor_on_connect
         self._mqtt_discovery_enabled = mqtt_discovery_enabled
         self._mqtt_discovery_prefix = mqtt_discovery_prefix
         self._psu_addresses = psu_addresses if psu_addresses else [1]
@@ -248,34 +250,7 @@ class RD60xxToMQTT:
 
                             # Act on topics
                             if message.topic.matches(wildcard_state_set) and not payload is None:
-                                # Set state request, retrieve state for PSU
-                                state = self._psu_states.get_state(identity, create=False)
-
-                                # Handle period first
-                                if type(payload.get("period")) in (int, float) and state is not None:
-                                    # Retrieve and limit period
-                                    update_period = payload["period"]
-                                    if update_period != 0:
-                                        # Limit to 100ms updates
-                                        update_period = max(update_period, 0.1)
-
-                                    # Set new update period
-                                    self._logger.debug("Update identity %s period to %d", identity, update_period)
-                                    state.update_period = update_period
-
-                                # Pass request to PSU if connected
-                                if psu is not None:
-                                    self._logger.debug("Set identity %s state to %s", identity, repr(payload))
-                                    psu.queue_state_set(payload)
-
-                                    # Check if any state-changing commands were sent (not just period)
-                                    state_changing_keys = {"output_voltage_set", "output_current_set", "ovp", "ocp",
-                                                            "output_enable", "output_toggle", "preset_index"}
-                                    if any(key in payload for key in state_changing_keys):
-                                        # Schedule a delayed state query if one isn't already pending
-                                        if identity not in self._pending_state_queries:
-                                            self._pending_state_queries.add(identity)
-                                            asyncio.create_task(self._delayed_state_query(identity, psu, 0.5))
+                                await self._handle_state_set(identity, payload)
 
                             elif message.topic.matches(wildcard_state_get):
                                 # Get state request, check if we should query the unit
@@ -335,6 +310,58 @@ class RD60xxToMQTT:
 
         # Clear pending flag so future commands can schedule new queries
         self._pending_state_queries.discard(identity)
+
+    async def _handle_state_set(self, identity:str, payload:dict):
+        """Handle a state set request from MQTT"""
+
+        psu = self._psus.get(identity)
+        state = self._psu_states.get_state(identity, create=False)
+
+        # Handle period first
+        period_set = type(payload.get("period")) in (int, float) and state is not None
+        if period_set:
+            # Retrieve and limit period
+            update_period = payload["period"]
+            if update_period != 0:
+                # Limit to 100ms updates
+                update_period = max(update_period, 0.1)
+
+            # Set new update period
+            self._logger.debug("Update identity %s period to %d", identity, update_period)
+            state.update_period = update_period
+
+        settings = {key: value for key, value in payload.items() if key != "period"}
+
+        if psu is not None and settings:
+            # Pass request to PSU
+            self._logger.debug("Set identity %s state to %s", identity, repr(payload))
+            psu.queue_state_set(payload)
+
+            # Check if any state-changing commands were sent (not just period)
+            state_changing_keys = {"output_voltage_set", "output_current_set", "ovp", "ocp",
+                                    "output_enable", "output_toggle", "preset_index"}
+            if any(key in payload for key in state_changing_keys):
+                # Schedule a delayed state query if one isn't already pending
+                if identity not in self._pending_state_queries:
+                    self._pending_state_queries.add(identity)
+                    asyncio.create_task(self._delayed_state_query(identity, psu, 0.5))
+
+        elif psu is not None and period_set:
+            # Period only: read the unit once, so the new period is published without a write
+            psu.queue_state_get()
+
+        elif period_set:
+            # Unit not connected, publish the new period only
+            await self._mqtt_outbound(identity, {"connected": False, "period": state.update_period})
+
+    def _apply_initial_period(self, state):
+        """Set the update period of a newly seen PSU.
+
+        Periodic polling locks the PSU keys, so a PSU is not polled after it connects
+        unless monitor_on_connect is set. A period set earlier (cached state) is kept."""
+
+        if state.update_period is None:
+            state.update_period = self._default_update_period if self._monitor_on_connect else 0
 
     async def _mqtt_outbound(self, identity:str, state:dict):
         """Send MQTT state message on behalf of caller"""
@@ -447,7 +474,8 @@ class RD60xxToMQTT:
                             identity,
                             model,
                             name,
-                            firmware_version
+                            firmware_version,
+                            self._default_update_period or 5  # monitor_period
                         )
 
                 # Update last connection time
@@ -462,9 +490,8 @@ class RD60xxToMQTT:
                 # Retrieve PSU state object based on identity
                 state = self._psu_states.get_state(identity)
 
-                # Set default update period if not already configured
-                if state.update_period is None:
-                    state.update_period = self._default_update_period
+                # Set update period of a newly seen PSU
+                self._apply_initial_period(state)
 
                 # Discovery publication can yield while the socket disconnects.
                 if not psu.connected:

@@ -14,7 +14,8 @@ async def publish_discovery_config(
     identity: str,
     model: int,
     name: str,
-    firmware_version: str
+    firmware_version: str,
+    monitor_period: float = 5
 ) -> None:
     """
     Publish Home Assistant MQTT Discovery configuration for a PSU
@@ -27,6 +28,7 @@ async def publish_discovery_config(
         model: PSU model number (e.g., 60181)
         name: Friendly name for the PSU
         firmware_version: Firmware version string
+        monitor_period: Update period set by the Monitoring switch
     """
 
     if not mqtt_client:
@@ -181,6 +183,26 @@ async def publish_discovery_config(
     }
     topic = f"{mqtt_discovery_prefix}/switch/riden_{identity}/output/config"
     configs.append((topic, output_switch))
+
+    # Switch for monitoring (periodic polling). Polling locks the PSU keys,
+    # so off means period 0: the unit is read only on request.
+    monitoring_switch = {
+        "name": "Monitoring",
+        "unique_id": f"riden_{identity}_monitoring",
+        "object_id": f"riden_{identity}_monitoring",
+        "state_topic": state_topic,
+        "command_topic": command_topic,
+        "value_template": "{{ value_json.period > 0 }}",
+        "payload_on": json.dumps({"period": monitor_period}),
+        "payload_off": json.dumps({"period": 0}),
+        "state_on": True,
+        "state_off": False,
+        "icon": "mdi:eye",
+        "availability": dual_availability,
+        "device": device
+    }
+    topic = f"{mqtt_discovery_prefix}/switch/riden_{identity}/monitoring/config"
+    configs.append((topic, monitoring_switch))
 
     # Number controls (using dynamic limits based on PSU model)
     numbers = [

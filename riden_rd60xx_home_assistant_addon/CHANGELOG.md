@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.10 - 2026-11-18 (fork)
+
+- Periodic polling locks the PSU keys. A PSU is not polled after it connects
+  (state is read once); new option `monitor_on_connect` restores polling.
+- New `Monitoring` switch per PSU: on sets the period to
+  `default_update_period`, off sets it to 0.
+- A period-only change reads the unit once instead of a write, so Home
+  Assistant gets the new period at once.
+
 ## 1.0.9 - 2026-11-18 (fork)
 
 - Merge upstream 1.0.8. The add-on is built locally from the Dockerfile
