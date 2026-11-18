@@ -92,6 +92,10 @@ After provisioning, the PSU connects to your WiFi Router and then to the **serve
 python riden_wifi_provision.py --server-ip 192.168.1.50 --ssid "MyWiFi" --password "secret" --bssid "b8:c1:ac:a6:35:93"
 ```
 
+If the tool reports no device and the computer has a VPN or several network
+adapters, Windows can send the broadcast through the wrong adapter. Add
+`--bind <IP of your WiFi adapter>`, for example `--bind 192.168.1.17`.
+
 ---
 
 ## Troubleshooting

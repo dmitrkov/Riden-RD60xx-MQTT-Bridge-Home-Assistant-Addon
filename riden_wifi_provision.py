@@ -105,7 +105,7 @@ def parse_bssid(bssid: Optional[str]) -> bytes:
 
 
 def send_loop(ssid: bytes, password: bytes, bssid: bytes, server_ip_bytes: bytes,
-              repeat: int, use_broadcast: bool) -> None:
+              repeat: int, use_broadcast: bool, bind_ip: Optional[str] = None) -> None:
     data = server_ip_bytes + password + ssid
     codes = prepare_codes(ssid, password, bssid, data)
 
@@ -121,6 +121,9 @@ def send_loop(ssid: bytes, password: bytes, bssid: bytes, server_ip_bytes: bytes
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     if use_broadcast:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    if bind_ip:
+        # Send from this interface (Windows may route 255.255.255.255 into a VPN)
+        sock.bind((bind_ip, 0))
 
     try:
         for _ in range(repeat):
@@ -188,7 +191,8 @@ def recv_results(expected: int, timeout: int) -> List[Tuple[str, str]]:
 
 def esptouch_provision(ssid: str, password: str, bssid: Optional[str],
                        server_ip: str, expected: int, timeout: int,
-                       repeat: int, use_broadcast: bool) -> List[Tuple[str, str]]:
+                       repeat: int, use_broadcast: bool,
+                       bind_ip: Optional[str] = None) -> List[Tuple[str, str]]:
     ssid_b = ssid.encode()
     password_b = (password or "").encode()
     bssid_b = parse_bssid(bssid)
@@ -200,7 +204,7 @@ def esptouch_provision(ssid: str, password: str, bssid: Optional[str],
 
     sender = threading.Thread(
         target=send_loop,
-        args=(ssid_b, password_b, bssid_b, server_ip_bytes, repeat, use_broadcast),
+        args=(ssid_b, password_b, bssid_b, server_ip_bytes, repeat, use_broadcast, bind_ip),
         daemon=True,
     )
     sender.start()
@@ -226,6 +230,7 @@ def main() -> int:
     parser.add_argument("--count", type=int, default=1, help="Expected number of devices")
     parser.add_argument("--repeat", type=int, default=8, help="Transmit repeat loops")
     parser.add_argument("--multicast", action="store_true", help="Use multicast instead of broadcast")
+    parser.add_argument("--bind", help="Local IP of the WiFi interface to send from")
     args = parser.parse_args()
 
     print("Step 1: Enter the server IP (Home Assistant) that the PSU should connect to.")
@@ -245,6 +250,7 @@ def main() -> int:
         timeout=args.timeout,
         repeat=args.repeat,
         use_broadcast=not args.multicast,
+        bind_ip=args.bind,
     )
 
     if not results:
