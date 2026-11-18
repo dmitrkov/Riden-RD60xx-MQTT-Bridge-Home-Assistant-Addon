@@ -88,6 +88,7 @@ def main():
     set_clock_on_connection = bool(options.get("set_clock_on_connection", True))
     default_update_period = float(options.get("default_update_period", 0) or 0)
     monitor_on_connect = bool(options.get("monitor_on_connect", False))
+    idle_keepalive_secs = float(options.get("idle_keepalive_secs", 30) or 0)
     mqtt_discovery_enabled = bool(options.get("mqtt_discovery_enabled", False))
     mqtt_discovery_prefix = options.get("mqtt_discovery_prefix", "homeassistant")
     psu_addresses_raw = options.get("psu_addresses")
@@ -137,6 +138,7 @@ def main():
         set_clock_on_connection=set_clock_on_connection,
         default_update_period=default_update_period,
         monitor_on_connect=monitor_on_connect,
+        idle_keepalive_secs=idle_keepalive_secs,
         mqtt_discovery_enabled=mqtt_discovery_enabled,
         mqtt_discovery_prefix=mqtt_discovery_prefix,
         psu_addresses=psu_addresses,

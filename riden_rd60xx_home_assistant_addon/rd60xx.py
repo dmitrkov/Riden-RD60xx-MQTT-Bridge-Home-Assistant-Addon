@@ -5,6 +5,7 @@ import time
 
 from pymodbus.logging import Log
 from pymodbus.framer.base import FramerType
+from pymodbus.framer.rtu import FramerRTU
 
 from async_modbus_reverse_tcp_client import AsyncModbusReverseTcpClient
 
@@ -292,6 +293,25 @@ class RD60xx(AsyncModbusReverseTcpClient):
 
     # Default PSU address
     PSU_ADDR = 1
+
+    # Unused Modbus address for keepalive frames: the WiFi module sees traffic,
+    # the PSU ignores a frame for another address (no reply, no key lock).
+    KEEPALIVE_ADDR = 247
+
+    @staticmethod
+    def keepalive_frame(address:int=KEEPALIVE_ADDR) -> bytes:
+        """RTU frame: read 1 holding register at 0 from the given address"""
+
+        frame = bytes([address, 3, 0, 0, 0, 1])
+        return frame + FramerRTU.compute_CRC(frame).to_bytes(2, "big")
+
+    def send_keepalive(self):
+        """Send a keepalive frame without waiting for a reply.
+
+        Stock Riden WiFi modules drop the connection after about 60 s without
+        Modbus traffic. TCP keepalive does not count."""
+
+        self.ctx.transport.write(self.keepalive_frame())
 
     # Field scalings
     FIRMWARE_SCALE = 100.0

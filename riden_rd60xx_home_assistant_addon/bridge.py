@@ -11,7 +11,8 @@ from psu_state import PSUState
 class Bridge:
     """Bridge implementation for single PSU"""
 
-    def __init__(self, host:str, port:int, identity:str, model:int, serial_no:int, psu:RD60xx, persistent_state:PSUState, publish_callback:Callable, set_clock_on_connection:bool=False) -> None:
+    def __init__(self, host:str, port:int, identity:str, model:int, serial_no:int, psu:RD60xx, persistent_state:PSUState, publish_callback:Callable, set_clock_on_connection:bool=False,
+                 keepalive_secs:float=0) -> None:
         """Constructor"""
 
         # Store arguments
@@ -24,6 +25,7 @@ class Bridge:
         self._persistent_state = persistent_state
         self._publish_callback = publish_callback
         self._set_clock_on_connection = set_clock_on_connection
+        self._keepalive_secs = keepalive_secs
 
         # Construct logger
         self._logger = logging.getLogger("Bridge")
@@ -33,6 +35,7 @@ class Bridge:
 
         # Reset last query time
         self._last_query_time = 0
+        self._last_traffic_time = time.monotonic()
 
         # Start psu task
         self._psu_task = asyncio.create_task(self._psu_task_func())
@@ -169,6 +172,9 @@ class Bridge:
             if self._persistent_state.update_period > 0:
                 # Calculate timeout before next query, limiting to zero if already late
                 timeout = max(self._persistent_state.update_period - (time.monotonic() - self._last_query_time), 0)
+            elif self._keepalive_secs > 0:
+                # Not polling, wake up for the next keepalive
+                timeout = max(self._keepalive_secs - (time.monotonic() - self._last_traffic_time), 0)
 
             # Dequeue item, waiting between some and infinite time
             entry = await asyncio.wait_for(self._inbound_queue.get(), timeout=timeout)
@@ -192,6 +198,11 @@ class Bridge:
             if elapsed_time > self._persistent_state.update_period:
                 # Query psu
                 await self._get_state()
+
+        elif self._keepalive_secs > 0 and time.monotonic() - self._last_traffic_time >= self._keepalive_secs:
+            # Not polling: keep the WiFi module from dropping an idle connection
+            self._psu.send_keepalive()
+            self._last_traffic_time = time.monotonic()
 
     async def _process_queue_entry(self, entry:Tuple[bool, dict]):
         """Handle single entry from queue"""
@@ -305,3 +316,4 @@ class Bridge:
 
         # Update last query time
         self._last_query_time = time.monotonic()
+        self._last_traffic_time = self._last_query_time

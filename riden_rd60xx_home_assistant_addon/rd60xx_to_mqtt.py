@@ -46,6 +46,7 @@ class RD60xxToMQTT:
                  set_clock_on_connection:bool=True,
                  default_update_period:float=0,
                  monitor_on_connect:bool=False,
+                 idle_keepalive_secs:float=0,
                  mqtt_discovery_enabled:bool=False,
                  mqtt_discovery_prefix:str=None,
                  psu_addresses:list=None) -> None:
@@ -68,6 +69,7 @@ class RD60xxToMQTT:
         self._set_clock_on_connection = set_clock_on_connection
         self._default_update_period = default_update_period
         self._monitor_on_connect = monitor_on_connect
+        self._idle_keepalive_secs = idle_keepalive_secs
         self._mqtt_discovery_enabled = mqtt_discovery_enabled
         self._mqtt_discovery_prefix = mqtt_discovery_prefix
         self._psu_addresses = psu_addresses if psu_addresses else [1]
@@ -503,7 +505,8 @@ class RD60xxToMQTT:
                     previous_bridge.client.close()
 
                 # Create new bridge instance
-                psu_bridge = Bridge(host, port, identity, model, serial_no, psu, state, self._mqtt_outbound, self._set_clock_on_connection)
+                psu_bridge = Bridge(host, port, identity, model, serial_no, psu, state, self._mqtt_outbound, self._set_clock_on_connection,
+                                    self._idle_keepalive_secs)
 
                 # Add bridge instance to map
                 self._psus[identity] = psu_bridge

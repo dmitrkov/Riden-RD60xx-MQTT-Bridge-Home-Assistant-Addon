@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.12 - 2026-11-18 (fork)
+
+- Stock Riden WiFi modules drop the connection after about 60 s without
+  Modbus traffic (TCP keepalive does not count), so an unpolled PSU
+  reconnected every ~75 s. While not polling, the bridge now sends a frame
+  to unused address 247 every `idle_keepalive_secs` (default 30, 0 = off).
+  The PSU ignores it, so its keys stay unlocked.
+
 ## 1.0.11 - 2026-11-18 (fork)
 
 - Discovery sets `default_entity_id` (`<domain>.riden_<identity>_<id>`):
