@@ -99,6 +99,38 @@ python riden_wifi_provision.py --server-ip 192.168.1.50 --ssid "MyWiFi" --passwo
 - Make sure MQTT is reachable and credentials are correct
 - Ensure the PSU WiFi module is in the correct setup mode before provisioning
 
+If the PSU connection is lost, its Connected sensor turns off and its controls
+become unavailable until the PSU reconnects. Temporary Modbus errors on a live
+connection are retried after at least five seconds. Commands that fail are not
+replayed after reconnecting; check the device's reported state before retrying.
+
+Port 8080 expects Modbus RTU replies from the Riden WiFi module, rather than HTTP
+or Modbus TCP. Malformed replies and excessive incoming data cause that client
+to be disconnected. Valid replies split across TCP packets are reassembled;
+duplicate replies and replies that do not match the current request are ignored
+within a bounded receive allowance. Reconnecting PSUs keep their detected Modbus
+address, including addresses other than 1.
+
+## Container images and tests
+
+GitHub Actions tests the bridge with Python 3.12 and builds every architecture
+listed in the add-on configuration. Successful builds on `main` publish signed,
+versioned images and `latest` to `ghcr.io/detfisch/riden_rd60xx_home_assistant_addon`.
+Home Assistant downloads the image matching the configured add-on version instead
+of building the Dockerfile on the user's device.
+
+Run the regression tests without connecting to a PSU, MQTT broker, or Home Assistant:
+
+```bash
+python -m pip install -r riden_rd60xx_home_assistant_addon/requirements.txt
+python -B -m unittest discover -s tests -v
+```
+
+The tests include a PSU simulator using real loopback TCP connections for device
+identification, status, control, clock setting and reconnects. A separate process
+with a hard timeout checks hostile payloads up to 1 MiB and randomized fragments,
+so a blocking parser regression cannot hang the test runner.
+
 ---
 
 ## Credits
@@ -106,4 +138,15 @@ python riden_wifi_provision.py --server-ip 192.168.1.50 --ssid "MyWiFi" --passwo
 - Based on the open-source Riden RD60xx MQTT bridge by pgreenland: https://github.com/pgreenland/RidenRD60xxMQTT
 - ESPTouch / SmartConfig provisioning inspired by the ESPTouch Android reference implementation
 - MQTT Discovery entities included for Home Assistant
+- Container build workflow contributed by [Andras Elso (elbandi)](https://github.com/elbandi)
+- PSU disconnect and log-flooding report by [Dewieinns](https://github.com/Dewieinns)
 
+## Pre-built Home Assistant images
+
+Home Assistant installs and updates this add-on from the container image declared
+in its configuration. It downloads the matching version for the host architecture
+instead of building the Dockerfile locally. GitHub Actions builds on every push
+to the default branch and publishes after all declared architectures pass.
+Existing release tags are kept; increase the add-on version for a new release.
+
+See [.github/ADDON_IMAGES.md](.github/ADDON_IMAGES.md) for the build and release workflow.

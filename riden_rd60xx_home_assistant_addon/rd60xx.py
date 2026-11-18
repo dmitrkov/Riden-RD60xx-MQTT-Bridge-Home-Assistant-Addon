@@ -298,23 +298,23 @@ class RD60xx(AsyncModbusReverseTcpClient):
     INPUT_VOLTAGE_SCALE = 100.0
     DEFAULT_VOLTAGE_SCALE = 100.0
     MODEL_VOLTAGE_SCALINGS = {
+        60065 : 1000.0,
         60125 : 1000.0,
         60185 : 1000.0,
-        60065 : 1000.0,
     }
     DEFAULT_CURRENT_SCALE = (100.0, False) # (scale, uses current range)
     MODEL_CURRENT_SCALINGS = {
         # model : (scale, uses current range)
         6006 : (1000.0, False),
+        60065 : (10000.0, False),
         60125 : (1000.0, True),
         60185 : (1000.0, False),
-        60065 : (10000.0, False),
     }
     DEFAULT_POWER_SCALE = 100.0
     MODEL_POWER_SCALINGS = {
+        60065 : 1000.0,
         60125 : 1000.0,
         60185 : 1000.0,
-        60065 : 1000.0,
     }
     BATT_SCALE = 1000.0
 
@@ -520,11 +520,11 @@ class RD60xx(AsyncModbusReverseTcpClient):
         # Extract and scale values
         output_voltage_set = new_state.output_voltage_set
         if output_voltage_set is not None:
-            output_voltage_set = int(output_voltage_set * voltage_scale)
+            output_voltage_set = round(output_voltage_set * voltage_scale)
 
         output_current_set = new_state.output_current_set
         if output_current_set is not None:
-            output_current_set = int(output_current_set * current_scale)
+            output_current_set = round(output_current_set * current_scale)
 
         # Set preset
         if new_state.preset_index is not None:
@@ -550,11 +550,11 @@ class RD60xx(AsyncModbusReverseTcpClient):
         # Send OVP / OCP
         if new_state.ovp is not None:
             # Write register
-            await self.write_register(device_id=self.PSU_ADDR, address=self.RD60xxRegisters.M0_OVP.value, value=int(new_state.ovp * voltage_scale))
+            await self.write_register(device_id=self.PSU_ADDR, address=self.RD60xxRegisters.M0_OVP.value, value=round(new_state.ovp * voltage_scale))
 
         if new_state.ocp is not None:
             # Write register
-            await self.write_register(device_id=self.PSU_ADDR, address=self.RD60xxRegisters.M0_OCP.value, value=int(new_state.ocp * current_scale))
+            await self.write_register(device_id=self.PSU_ADDR, address=self.RD60xxRegisters.M0_OCP.value, value=round(new_state.ocp * current_scale))
 
         # Send output enable
         if new_state.output_enable is not None:
